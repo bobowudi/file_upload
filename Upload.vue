@@ -2,7 +2,7 @@
     <div class="Upload">
         <div class="upload-top">
             <div class="upload-btn" @click="selectFile">点击上传</div>
-            <div class="upload-tip">支持{{fileTypeList.join('、')}}等常规可预览文件格式</div>
+            <div class="upload-tip">支持{{ fileTypeList.join('、') }}等常规可预览文件格式</div>
         </div>
         <div class="file-list">
             <div class="file-item" v-for="item in fileList" :key="item.fileId">
@@ -26,7 +26,7 @@ type Props = {
     countLimit?: number, //上传数量限制
 }
 const props = defineProps<Props>()
-const emit = defineEmits(['update-files','remove-files'])
+const emit = defineEmits(['update-files', 'remove-files'])
 const sizeTypeList = ['B', 'KB', 'MB', 'GB']
 const fileList = ref<any[]>([])
 const selectFile = () => {
@@ -44,11 +44,13 @@ const selectFile = () => {
         if (!checkFileSize(fileSize)) return ElMessage.error('文件尺寸不符合！')
         if (props.countLimit && fileList.value.length + 1 > props.countLimit) return ElMessage.error('超过上传限制数量！')
         fileList.value.push({
+            fileType,
             fileId: 'new-' + uuid(), //新增文件加new-标识
-            fileName,
+            fileName: `${fileName}（${getFileSize(fileSize)}）`,
+            fileSize: getFileSize(fileSize),
             file: e.target.files[0]
         })
-        emit('update-files',fileList.value)
+        emit('update-files', fileList.value)
     })
 
 }
@@ -75,18 +77,29 @@ const removeIds = ref<string[]>([])
 const removeFile = (row: any) => {
     const newList = fileList.value.filter((item: any) => item.fileId !== row.fileId)
     fileList.value = newList
-    emit('update-files',fileList.value)
+    emit('update-files', fileList.value)
     //对比文件，是新上传的不传移出的文件id
     if (row.fileId.slice(0, 4) === 'new-') return;
     removeIds.value.push(row.fileId)
-    emit('remove-files',removeIds.value)
+    emit('remove-files', removeIds.value)
 }
 //文件回显
-watch(()=>props.defaultFileList,(val)=>{
-    if(val){
+watch(() => props.defaultFileList, (val) => {
+    if (val) {
         fileList.value = val
     }
-},{immediate:true})
+}, { immediate: true })
+
+//获取文件大小
+const getFileSize = (size: number) => {
+    //b
+    if (size < 1024) return size + 'b';
+    //kb
+    if (size / 1024 / 1024 < 1) return (size / 1024).toFixed(2) + 'Kb';
+    //Mb
+    if (size / 1024 / 1024 / 1024 < 1) return (size / 1024 / 1024).toFixed(2) + 'Mb';
+}
+
 </script>
 <style lang="scss">
 .Upload {
